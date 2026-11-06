@@ -1,0 +1,89 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1B3A57"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png">
+<title>قبض آب مجتمع</title>
+<style>
+:root{--n:#1B3A57;--t:#2A7F9E;--g:#FCE8A6;--bg:#f2f7fa;--c:#fff;--tx:#17212b;--l:#d5e3eb;--in:#fff8d6;--bad:#c0392b}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1b26;--c:#1a2a38;--tx:#e8eff4;--l:#2d4254;--in:#3a3515}}
+*{box-sizing:border-box}body{margin:0;font-family:Vazirmatn,Tahoma,sans-serif;background:var(--bg);color:var(--tx);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{background:var(--n);color:#fff;padding:14px;text-align:center;font-weight:700;font-size:18px}
+main{max-width:640px;margin:auto;padding:12px}
+.card{background:var(--c);border:1px solid var(--l);border-radius:14px;padding:14px;margin-bottom:12px}
+button{font:inherit;border:0;border-radius:12px;padding:14px;background:var(--t);color:#fff;font-weight:700;width:100%;margin-top:8px;font-size:16px}
+button.s{background:var(--c);color:var(--n);border:1px solid var(--t)}button.d{background:var(--bad)}
+@media(prefers-color-scheme:dark){button.s{color:#cfe8f2}}
+input{font:inherit;width:100%;padding:12px;border:1px solid var(--l);border-radius:10px;background:var(--in);color:inherit;font-size:18px;text-align:center;margin:4px 0}
+label{font-size:13px;opacity:.8}
+.big{font-size:56px;font-weight:700;text-align:center;color:var(--t);line-height:1.2}
+.bar{height:8px;background:var(--l);border-radius:8px;overflow:hidden}.bar i{display:block;height:100%;background:var(--t)}
+table{width:100%;border-collapse:collapse;font-size:13px;background:var(--c)}th{background:var(--n);color:#fff;padding:6px}td{padding:6px;border-bottom:1px solid var(--l);text-align:center}
+tr.f td{border-bottom:2px solid var(--n)}tfoot td{background:var(--g);color:#1B3A57;font-weight:700}
+.row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--l)}
+.warn{color:var(--bad);font-weight:700;min-height:22px;text-align:center}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media print{header,button,.np{display:none}body{background:#fff}@page{size:A4}}
+</style></head><body><header id="h"></header><main id="app"></main>
+<script>
+const $=s=>document.querySelector(s),app=$('#app'),K='abkonter';
+const E=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const mk=()=>({name:'مجتمع مسکونی علی',units:[1,2,3,4].flatMap(f=>[1,2,3,4,5,6].map(u=>({n:f*100+u,fam:''}))),base:null,periods:[]});
+let S;try{S=JSON.parse(localStorage.getItem(K))||mk()}catch(e){S=mk()}
+const save=()=>localStorage.setItem(K,JSON.stringify(S));
+const num=s=>{s=String(s).replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)).replace(/[٬,،\s]/g,'').replace('٫','.');return s===''?NaN:Number(s)};
+const fmt=n=>Math.round(n).toLocaleString('en-US'),m3=n=>(+n.toFixed(1)).toLocaleString('en-US');
+const setH=t=>$('#h').textContent=t;
+function toJal(gy,gm,gd){const g=[0,31,59,90,120,151,181,212,243,273,304,334],y2=gm>2?gy+1:gy;let d=355666+365*gy+Math.floor((y2+3)/4)-Math.floor((y2+99)/100)+Math.floor((y2+399)/400)+gd+g[gm-1],jy=-1595+33*Math.floor(d/12053);d%=12053;jy+=4*Math.floor(d/1461);d%=1461;if(d>365){jy+=Math.floor((d-1)/365);d=(d-1)%365}return[jy,d<186?1+Math.floor(d/31):7+Math.floor((d-186)/30),1+(d<186?d%31:(d-186)%30)]}
+const MN='فروردین اردیبهشت خرداد تیر مرداد شهریور مهر آبان آذر دی بهمن اسفند'.split(' ');
+const lastR=()=>S.periods.length?S.periods[S.periods.length-1].r:S.base;
+function chain(root){const a=[...root.querySelectorAll('input')];a.forEach((el,i)=>el.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();a[i+1]?a[i+1].focus():el.blur()}}))}
+
+function home(){setH(S.name);const l=S.periods[S.periods.length-1];
+app.innerHTML=`<div class=card><div class=row><span>دوره‌های ثبت‌شده</span><b>${S.periods.length}</b></div>${l?`<div class=row><span>آخرین دوره</span><b>${E(l.title)}</b></div>`:''}</div>`+
+(S.base?`<button onclick="wiz()">ثبت دوره جدید</button><button class=s onclick="hist()">تاریخچه دوره‌ها</button>`:`<div class=card>ابتدا نام خانوادگی و شماره فعلی کنتور هر واحد را به‌عنوان قرائت پایه ثبت کنید.</div>`)+
+`<button class=s onclick="setup()">${S.base?'تنظیمات و پشتیبان‌گیری':'شروع: تنظیمات اولیه'}</button><p class=np style="font-size:12px;opacity:.7;text-align:center">اطلاعات روی همین گوشی ذخیره می‌شود؛ بعد از هر دوره پشتیبان (JSON) بگیرید.</p>`}
+
+function setup(){setH('تنظیمات');const B=S.base||{};
+app.innerHTML=`<div class=card><label>نام مجتمع</label><input id=nm value="${E(S.name)}"><div style="font-size:12px;opacity:.7">برای هر واحد، نام خانوادگی و شماره فعلی کنتور را بنویسید. با Enter به خانه بعد بروید.</div></div><div class=card>`+
+S.units.map(u=>`<div class=two><div><label>${u.n} – نام خانوادگی</label><input class=fm data-n=${u.n} value="${E(u.fam)}" style="font-size:15px"></div><div><label>شماره کنتور</label><input class=bs data-n=${u.n} inputmode=decimal value="${B[u.n]??''}"></div></div>`).join('')+
+`</div><button onclick="svSet()">ذخیره</button><button class=s onclick="bk()">خروجی پشتیبان (JSON)</button><button class=s onclick="$('#im').click()">بازگردانی از فایل پشتیبان</button><input id=im type=file accept=.json hidden onchange="rs(this)"><button class=s onclick="home()">بازگشت</button>`;chain(app)}
+function svSet(){let ok=true;const b={};
+document.querySelectorAll('.fm').forEach(i=>S.units.find(u=>u.n==i.dataset.n).fam=i.value.trim());
+document.querySelectorAll('.bs').forEach(i=>{const v=num(i.value);isNaN(v)?ok=false:b[i.dataset.n]=v});
+if(!ok){alert('شماره کنتور همه واحدها را وارد کنید');return}
+S.name=$('#nm').value.trim()||S.name;S.base=b;save();home()}
+function bk(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='abkonter-backup.json';a.click()}
+function rs(i){const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.units||!d.periods)throw 0;if(confirm('اطلاعات فعلی با فایل پشتیبان جایگزین شود؟')){S=d;save();home()}}catch(e){alert('فایل پشتیبان معتبر نیست')}};r.readAsText(f)}
+
+let W;
+function wiz(){setH('دوره جدید');const d=new Date(),j=toJal(d.getFullYear(),d.getMonth()+1,d.getDate()),p=n=>String(n).padStart(2,'0');
+W={i:0,r:{},prev:lastR(),conf:0};
+app.innerHTML=`<div class=card><label>نام یا شماره دوره</label><input id=t value="${MN[j[1]-1]} ${j[0]}"><label>تاریخ</label><input id=d value="${j[0]}/${p(j[1])}/${p(j[2])}"></div><button onclick="w1()">شروع ثبت کنتورها</button><button class=s onclick="home()">انصراف</button>`;chain(app)}
+function w1(){W.title=$('#t').value.trim()||'دوره';W.date=$('#d').value.trim();unit()}
+function unit(){const u=S.units[W.i],p=W.prev[u.n];W.conf=0;setH(`${W.title} – واحد ${u.n}`);
+app.innerHTML=`<div class=bar><i style="width:${W.i/S.units.length*100}%"></i></div><p style="text-align:center">واحد ${W.i+1} از ${S.units.length}</p><div class=card><div class=big>${u.n}</div><div style="text-align:center;min-height:24px">${E(u.fam)}</div><div class=row><span>دوره قبلی</span><b>${p}</b></div><label>دوره فعلی</label><input id=v inputmode=decimal value="${W.r[u.n]??''}"><div class=warn id=w></div><div id=c style="text-align:center"></div></div><button onclick="nx()">بعدی (Enter)</button><button class=s onclick="pv()">قبلی</button>`;
+const v=$('#v');v.oninput=()=>{const x=num(v.value);W.conf=0;$('#w').textContent='';$('#c').textContent=isNaN(x)?'':'مصرف: '+m3(x-p)+' متر مکعب'};v.oninput();
+v.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();nx()}};v.focus()}
+function nx(){const u=S.units[W.i],p=W.prev[u.n],x=num($('#v').value);
+if(isNaN(x)){$('#w').textContent='یک عدد وارد کنید';return}
+if(x<p&&!W.conf){W.conf=1;$('#w').textContent='کمتر از دوره قبلی است. برای تأیید دوباره بزنید';return}
+W.r[u.n]=x;W.i++;W.i<S.units.length?unit():fin()}
+function pv(){W.i>0?(W.i--,unit()):wiz()}
+const sumC=()=>S.units.reduce((a,u)=>a+W.r[u.n]-W.prev[u.n],0);
+function fin(){setH('قبض اصلی');
+app.innerHTML=`<div class=card><div class=row><span>مجموع مصرف واحدها</span><b>${m3(sumC())} m³</b></div><label>مصرف کل مجتمع از کنتور اصلی (متر مکعب)</label><input id=tm inputmode=decimal><label>مبلغ کل قبض (تومان)</label><input id=bl inputmode=numeric><div class=warn id=w></div></div><button onclick="calc()">محاسبه و ذخیره</button><button class=s onclick="W.i=S.units.length-1;unit()">قبلی</button>`;
+chain(app);$('#bl').addEventListener('keydown',e=>e.key==='Enter'&&calc());$('#tm').focus()}
+function calc(){const tm=num($('#tm').value),bl=num($('#bl').value);
+if(isNaN(tm)||isNaN(bl)||tm<=0||bl<=0){$('#w').textContent='هر دو مقدار را درست وارد کنید';return}
+if(sumC()>tm&&!confirm('مجموع مصرف واحدها از مصرف کل بیشتر است. ادامه می‌دهید؟'))return;
+const p={id:Date.now(),title:W.title,date:W.date,prev:W.prev,r:W.r,tm,bl};S.periods.push(p);save();res(p.id)}
+function cmp(p){const rate=p.bl/p.tm,rows=S.units.map(u=>{const c=p.r[u.n]-p.prev[u.n];return{n:u.n,fam:u.fam,a:p.prev[u.n],b:p.r[u.n],c,m:c*rate}}),su=rows.reduce((a,x)=>a+x.c,0),cm=p.tm-su;return{rate,rows,su,cm,pc:cm/p.tm,cc:cm*rate}}
+function res(id){const p=S.periods.find(x=>x.id==id),c=cmp(p),R=(a,b)=>`<div class=row><span>${a}</span><b>${b}</b></div>`;setH(S.name);
+app.innerHTML=`<div class=card>${R('دوره',E(p.title))}${R('تاریخ',E(p.date))}${R('مصرف کل مجتمع',m3(p.tm)+' m³')}${R('مجموع مصرف واحدها',m3(c.su)+' m³')}${R('مصرف مشاعات',`${m3(c.cm)} m³ (${(c.pc*100).toFixed(1)}٪)`)}${R('مبلغ کل قبض',fmt(p.bl))}${R('نرخ هر m³ (تومان)',fmt(c.rate))}${R('هزینه مشاعات (کسر از شارژ)',fmt(c.cc))}</div><div style="overflow-x:auto"><table><tr><th>واحد<th>نام<th>قبلی<th>فعلی<th>مصرف<th>مبلغ (تومان)</tr>${c.rows.map((x,i)=>`<tr class="${i%6==5?'f':''}"><td>${x.n}<td>${E(x.fam)}<td>${x.a}<td>${x.b}<td>${m3(x.c)}<td><b>${fmt(x.m)}</b></tr>`).join('')}<tfoot><tr><td colspan=4>جمع<td>${m3(c.su)}<td>${fmt(c.rows.reduce((a,x)=>a+x.m,0))}</tr></tfoot></table></div><button onclick="shr(${id})">ارسال پیام واحدها / کپی</button><button class=s onclick="print()">چاپ / ذخیره PDF</button><button class=s onclick="home()">خانه</button>`}
+function shr(id){const p=S.periods.find(x=>x.id==id),t=cmp(p).rows.map(x=>`واحد ${x.n} ${x.fam}: مصرف آب ${p.title} ${m3(x.c)} متر مکعب، مبلغ ${fmt(x.m)} تومان`).join('\n');
+navigator.share?navigator.share({text:t}).catch(()=>{}):navigator.clipboard.writeText(t).then(()=>alert('کپی شد'))}
+function hist(){setH('تاریخچه');app.innerHTML=(S.periods.slice().reverse().map(p=>`<div class=card><div class=row><b>${E(p.title)}</b><span>${E(p.date)}</span></div><div class=row><span>${m3(p.tm)} m³</span><span>${fmt(p.bl)} تومان</span></div><div class=two><button onclick="res(${p.id})">مشاهده</button><button class=d onclick="del(${p.id})">حذف</button></div></div>`).join('')||'<div class=card>هنوز دوره‌ای ثبت نشده است.</div>')+`<button class=s onclick="home()">خانه</button>`}
+function del(id){if(confirm('این دوره حذف شود؟')){S.periods=S.periods.filter(p=>p.id!=id);save();hist()}}
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+home();
+</script></body></html>
