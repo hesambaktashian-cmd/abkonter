@@ -21,7 +21,21 @@ tr.f td{border-bottom:2px solid var(--n)}tfoot td{background:var(--g);color:#1B3
 .row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px dashed var(--l)}
 .warn{color:var(--bad);font-weight:700;min-height:22px;text-align:center}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-@media print{header,button,.np{display:none}body{background:#fff}@page{size:A4}}
+.ph{display:none}
+@media print{
+:root{--bg:#fff;--c:#fff;--tx:#000;--l:#b9ccd8;--in:#fff}
+*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@page{size:A4;margin:0}
+body{background:#fff;color:#000;padding:0}
+header,button,.np{display:none}
+main{max-width:none;padding:12mm}
+.ph{display:block;background:var(--n);color:#fff;text-align:center;padding:10px;margin-bottom:8px;border-radius:6px}
+.ph b{font-size:18px;display:block}.ph span{font-size:12px}
+.card{display:grid;grid-template-columns:1fr 1fr;gap:0 22px;border:1px solid var(--l);border-radius:6px;padding:6px 10px;margin-bottom:8px}
+.row{font-size:11.5px;padding:3px 0}
+table{font-size:11px}th{padding:5px}td{padding:3.5px 4px}
+tr{break-inside:avoid}
+}
 </style></head><body><header id="h"></header><main id="app"></main>
 <script>
 const $=s=>document.querySelector(s),app=$('#app'),K='abkonter';
@@ -76,11 +90,13 @@ function calc(){const tm=num($('#tm').value),bl=num($('#bl').value);
 if(isNaN(tm)||isNaN(bl)||tm<=0||bl<=0){$('#w').textContent='هر دو مقدار را درست وارد کنید';return}
 if(sumC()>tm&&!confirm('مجموع مصرف واحدها از مصرف کل بیشتر است. ادامه می‌دهید؟'))return;
 const p={id:Date.now(),title:W.title,date:W.date,prev:W.prev,r:W.r,tm,bl};S.periods.push(p);save();res(p.id)}
-function cmp(p){const rate=p.bl/p.tm,rows=S.units.map(u=>{const c=p.r[u.n]-p.prev[u.n];return{n:u.n,fam:u.fam,a:p.prev[u.n],b:p.r[u.n],c,m:c*rate}}),su=rows.reduce((a,x)=>a+x.c,0),cm=p.tm-su;return{rate,rows,su,cm,pc:cm/p.tm,cc:cm*rate}}
+const RND=1000;
+function cmp(p){const rate=p.bl/p.tm,rows=S.units.map(u=>{const c=p.r[u.n]-p.prev[u.n];return{n:u.n,fam:u.fam,a:p.prev[u.n],b:p.r[u.n],c,m:Math.round(c*rate/RND)*RND}}),su=rows.reduce((a,x)=>a+x.c,0),tot=rows.reduce((a,x)=>a+x.m,0),cm=p.tm-su;return{rate,rows,su,tot,cm,pc:cm/p.tm,cc:p.bl-tot}}
 function res(id){const p=S.periods.find(x=>x.id==id),c=cmp(p),R=(a,b)=>`<div class=row><span>${a}</span><b>${b}</b></div>`;setH(S.name);
-app.innerHTML=`<div class=card>${R('دوره',E(p.title))}${R('تاریخ',E(p.date))}${R('مصرف کل مجتمع',m3(p.tm)+' m³')}${R('مجموع مصرف واحدها',m3(c.su)+' m³')}${R('مصرف مشاعات',`${m3(c.cm)} m³ (${(c.pc*100).toFixed(1)}٪)`)}${R('مبلغ کل قبض',fmt(p.bl))}${R('نرخ هر m³ (تومان)',fmt(c.rate))}${R('هزینه مشاعات (کسر از شارژ)',fmt(c.cc))}</div><div style="overflow-x:auto"><table><tr><th>واحد<th>نام<th>قبلی<th>فعلی<th>مصرف<th>مبلغ (تومان)</tr>${c.rows.map((x,i)=>`<tr class="${i%6==5?'f':''}"><td>${x.n}<td>${E(x.fam)}<td>${x.a}<td>${x.b}<td>${m3(x.c)}<td><b>${fmt(x.m)}</b></tr>`).join('')}<tfoot><tr><td colspan=4>جمع<td>${m3(c.su)}<td>${fmt(c.rows.reduce((a,x)=>a+x.m,0))}</tr></tfoot></table></div><button onclick="shr(${id})">ارسال پیام واحدها / کپی</button><button class=s onclick="print()">چاپ / ذخیره PDF</button><button class=s onclick="home()">خانه</button>`}
+app.innerHTML=`<div class=ph><b>${E(S.name)}</b><span>صورت‌حساب آب – ${E(p.title)} – ${E(p.date)}</span></div><div class=card>${R('دوره',E(p.title))}${R('تاریخ',E(p.date))}${R('مصرف کل مجتمع',m3(p.tm)+' متر مکعب')}${R('مجموع مصرف واحدها',m3(c.su)+' متر مکعب')}${R('مصرف مشاعات',`${m3(c.cm)} متر مکعب (${(c.pc*100).toFixed(1)}٪)`)}${R('مبلغ کل قبض',fmt(p.bl))}${R('نرخ هر متر مکعب (تومان)',fmt(c.rate))}${R('جمع مبالغ واحدها (رُند‌شده)',fmt(c.tot))}${R('هزینه مشاعات (کسر از شارژ)',fmt(c.cc))}</div><div style="overflow-x:auto"><table><tr><th>واحد<th>نام<th>قبلی<th>فعلی<th>مصرف<th>مبلغ (تومان)</tr>${c.rows.map((x,i)=>`<tr class="${i%6==5?'f':''}"><td>${x.n}<td>${E(x.fam)}<td>${x.a}<td>${x.b}<td>${m3(x.c)}<td><b>${fmt(x.m)}</b></tr>`).join('')}<tfoot><tr><td colspan=4>جمع<td>${m3(c.su)}<td>${fmt(c.tot)}</tr></tfoot></table></div><button onclick="shr(${id})">ارسال پیام واحدها / کپی</button><button class=s onclick="prn(${id})">چاپ / ذخیره PDF</button><button class=s onclick="home()">خانه</button>`}
 function shr(id){const p=S.periods.find(x=>x.id==id),t=cmp(p).rows.map(x=>`واحد ${x.n} ${x.fam}: مصرف آب ${p.title} ${m3(x.c)} متر مکعب، مبلغ ${fmt(x.m)} تومان`).join('\n');
 navigator.share?navigator.share({text:t}).catch(()=>{}):navigator.clipboard.writeText(t).then(()=>alert('کپی شد'))}
+function prn(id){const p=S.periods.find(x=>x.id==id),t=document.title;document.title='قبض آب '+S.name+' - '+p.title;print();document.title=t}
 function hist(){setH('تاریخچه');app.innerHTML=(S.periods.slice().reverse().map(p=>`<div class=card><div class=row><b>${E(p.title)}</b><span>${E(p.date)}</span></div><div class=row><span>${m3(p.tm)} m³</span><span>${fmt(p.bl)} تومان</span></div><div class=two><button onclick="res(${p.id})">مشاهده</button><button class=d onclick="del(${p.id})">حذف</button></div></div>`).join('')||'<div class=card>هنوز دوره‌ای ثبت نشده است.</div>')+`<button class=s onclick="home()">خانه</button>`}
 function del(id){if(confirm('این دوره حذف شود؟')){S.periods=S.periods.filter(p=>p.id!=id);save();hist()}}
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();
